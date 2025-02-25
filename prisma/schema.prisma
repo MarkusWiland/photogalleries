@@ -1,0 +1,125 @@
+// Your existing Prisma schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREE
+  BASIC
+  PRO
+  BUSINESS
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Category {
+  NATURE
+  PORTRAIT
+  CITYSCAPE
+  ABSTRACT
+  OTHER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique // Lägg till detta fält!
+  email     String   @unique
+  name      String?
+  password  String?
+  image     String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  galleries     Gallery[]
+  subscriptions Subscription?
+  comments      Comment[]
+  likes         Like[]
+  folders       Folder[] // Relation to Folder
+}
+
+model Folder {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  images Image[] // Relation to Image
+}
+
+model Gallery {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  images Image[] @relation("GalleryImages")
+}
+
+model Image {
+  id          String   @id @default(uuid())
+  url         String
+  title       String?
+  description String?
+  category    Category @default(OTHER)
+  isPublic    Boolean  @default(true)
+  folderId    String? // Reference to Folder (nullable)
+  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  comments  Comment[]
+  likes     Like[]
+  tags      Tag[]
+  galleries Gallery[] @relation("GalleryImages")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  text      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageId   String
+  image     Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageId   String
+  image     Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, imageId]) // En användare kan bara gilla en bild en gång
+}
+
+model Tag {
+  id      String @id @default(uuid())
+  name    String
+  imageId String
+  image   Image  @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  @@unique([name, imageId]) // Samma tagg kan inte upprepas på samma bild
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      Plan     @default(FREE)
+  stripeId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
