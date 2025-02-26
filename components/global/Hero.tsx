@@ -1,8 +1,12 @@
 import React from 'react'
 import { Button } from '../ui/button'
 import Image from 'next/image'
+import { auth } from '@clerk/nextjs/server'
 
-export default function Hero() {
+export default async function Hero() {
+
+  const user = await auth()
+  console.log("user", user)
   return (
     <div className="min-h-screen">
       <div className="flex flex-col space-y-6 items-center justify-center">

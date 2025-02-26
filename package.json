@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/localizations": "^3.10.7",
     "@clerk/nextjs": "^6.12.0",
     "@hookform/resolvers": "^4.1.2",
+    "@kinde-oss/kinde-auth-nextjs": "1",
     "@prisma/client": "6.4.1",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -57,6 +59,7 @@
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.1",
     "sonner": "^2.0.1",
+    "svix": "^1.59.2",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
     "uploadthing": "^7.5.2",

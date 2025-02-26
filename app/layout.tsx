@@ -3,6 +3,7 @@ import {
   ClerkProvider,
 
 } from '@clerk/nextjs'
+import { svSE } from '@clerk/localizations'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/global/Header";
@@ -28,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={svSE}>
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
