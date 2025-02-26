@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation'
 import { prisma } from './utils/prisma'
 import { User } from '@prisma/client'
 import { requireUser } from './utils/requiredUser'
+import { folderSchema } from './utils/zodSchemas'
+import { z } from 'zod'
 
 export async function createUser(data: User) {
   try {
@@ -34,19 +36,25 @@ export async function createUser(data: User) {
   }
 }
 
-export async function createFolder() {
-  const user = await requireUser()
+export async function createFolder(data: z.infer<typeof folderSchema>) {
+  const user = await requireUser();
   if (!user?.id) {
-    return redirect('/')
+    return redirect('/');
   }
 
+  // Validera data med Zod
+  const validatedData = folderSchema.parse(data); // Detta kastar ett fel om datan inte är korrekt
+
+  // Skapa folder i databasen
   await prisma.folder.create({
     data: {
-      name: 'hej',
-      description: 'cool',
-      userId: user?.id, // Här använder vi Prisma-användarens ID
+      name: validatedData.name,
+      description: validatedData.description,
+      userId: user.id, // Användarens ID från Prisma
+      category: validatedData.category,
+      coverImage: validatedData.coverImage,
     },
-  })
+  });
 }
 
 
