@@ -7,6 +7,7 @@ import { User } from '@prisma/client'
 import { requireUser } from './utils/requiredUser'
 import { folderSchema } from './utils/zodSchemas'
 import { z } from 'zod'
+import { revalidatePath } from 'next/cache'
 
 export async function createUser(data: User) {
   try {
@@ -45,6 +46,9 @@ export async function createFolder(data: z.infer<typeof folderSchema>) {
   // Validera data med Zod
   const validatedData = folderSchema.parse(data); // Detta kastar ett fel om datan inte är korrekt
 
+  if(!validatedData) {
+    return null;
+  }
   // Skapa folder i databasen
   await prisma.folder.create({
     data: {
@@ -55,6 +59,7 @@ export async function createFolder(data: z.infer<typeof folderSchema>) {
       coverImage: validatedData.coverImage,
     },
   });
+  revalidatePath("/portfolio")
 }
 
 
