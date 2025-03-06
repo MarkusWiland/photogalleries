@@ -1,17 +1,23 @@
-import React from 'react'
+'use client'
+import { motion } from "framer-motion";
 
 export default function BillBoardGallery() {
   return (
-    <div className="bg-red-200 p-32 flex items-center justify-center">
-      <div className="flex flex-col space-y-4 items-center justify-center">
-        <h1 className="text-5xl font-bold tracking-tighter">
+    <div className="relative w-full h-[500px] flex items-center justify-center">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-center max-w-2xl px-6"
+      >
+        <h1 className="text-6xl font-extrabold tracking-tighter">
           Skapa ditt galleri
         </h1>
-        <p className="text-md text-center text-muted-foreground text-balance max-w-md tracking-tight">
+        <p className="text-lg mt-4 text-gray-300 tracking-tight">
           Upptäck kraften i att organisera och dela dina foton enkelt och
           effektivt.
         </p>
-      </div>
+      </motion.div>
     </div>
-  )
+  );
 }

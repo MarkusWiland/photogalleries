@@ -1,4 +1,3 @@
-// Your existing Prisma schema
 generator client {
   provider = "prisma-client-js"
 }
@@ -28,9 +27,14 @@ enum Category {
   OTHER
 }
 
+enum PostType {
+  BLOG
+  FORUM
+}
+
 model User {
   id        String   @id @default(uuid())
-  clerkId   String   @unique // Lägg till detta fält!
+  clerkId   String   @unique // Autentisering via Clerk
   email     String   @unique
   name      String?
   password  String?
@@ -38,27 +42,58 @@ model User {
   role      Role     @default(USER)
   createdAt DateTime @default(now())
 
+  folders       Folder[]
+  images        Image[]
   galleries     Gallery[]
-  subscriptions Subscription?
   comments      Comment[]
   likes         Like[]
-  folders       Folder[] // Relation to Folder
+  subscriptions Subscription?
+  posts         Post[]
+  forumThreads  ForumThread[]
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      Plan     @default(FREE)
+  stripeId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Folder {
   id          String   @id @default(uuid())
   name        String
   description String?
-  category    Category @default(OTHER) // Valfri kategori
+  category    Category @default(OTHER)
   coverImage  String?  // Huvudbild för UI
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  images Image[] // Relation till bilder
+  images Image[]
 }
 
+model Image {
+  id          String   @id @default(uuid())
+  url         String
+  title       String?
+  description String?
+  category    Category @default(OTHER)
+  isPublic    Boolean  @default(true)
+  folderId    String?  // Koppling till folder
+  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  userId      String   // Ägaren av bilden
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  comments  Comment[]
+  likes     Like[]
+  tags      Tag[]
+  galleries Gallery[] @relation("GalleryImages")
+}
 
 model Gallery {
   id          String   @id @default(uuid())
@@ -71,23 +106,6 @@ model Gallery {
   images Image[] @relation("GalleryImages")
 }
 
-model Image {
-  id          String   @id @default(uuid())
-  url         String
-  title       String?
-  description String?
-  category    Category @default(OTHER)
-  isPublic    Boolean  @default(true)
-  folderId    String? // Reference to Folder (nullable)
-  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-
-  comments  Comment[]
-  likes     Like[]
-  tags      Tag[]
-  galleries Gallery[] @relation("GalleryImages")
-}
-
 model Comment {
   id        String   @id @default(uuid())
   text      String
@@ -95,18 +113,24 @@ model Comment {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   imageId   String
   image     Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  quoteId   String?  // Om det är en kommentar som citerar en annan kommentar
+  quote     Comment? @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+
+  Comment Comment[] @relation("QuoteRelation")
 }
 
 model Like {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  imageId   String
-  image     Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  imageId   String?
+  image     Image?    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  postId    String?
+  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@unique([userId, imageId]) // En användare kan bara gilla en bild en gång
+  @@unique([userId, imageId, postId]) // En användare kan bara gilla en bild eller ett inlägg en gång
 }
 
 model Tag {
@@ -115,15 +139,68 @@ model Tag {
   imageId String
   image   Image  @relation(fields: [imageId], references: [id], onDelete: Cascade)
 
-  @@unique([name, imageId]) // Samma tagg kan inte upprepas på samma bild
+  @@unique([name, imageId])
 }
 
-model Subscription {
+model Post {
   id        String   @id @default(uuid())
-  userId    String   @unique
+  title     String
+  content   String
+  type      PostType @default(BLOG)
+  userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan      Plan     @default(FREE)
-  stripeId  String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  comments  Comment[]
+  likes     Like[]
+}
+
+model ForumCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  description String?
+  createdAt DateTime @default(now())
+
+  threads ForumThread[]
+}
+
+model ForumThread {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  comments ForumComment[]
+  likes    ForumLike[]
+}
+
+model ForumComment {
+  id         String   @id @default(uuid())
+  text       String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threadId   String
+  thread     ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  quoteId    String? // Om detta är ett citat av en annan kommentar
+  quote      ForumComment? @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  likes ForumLike[]
+}
+
+model ForumLike {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threadId  String?
+  thread    ForumThread? @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  commentId String?
+  comment   ForumComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, threadId, commentId]) // En användare kan bara gilla en gång per inlägg/kommentar
 }

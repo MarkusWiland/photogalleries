@@ -12,6 +12,7 @@ import {
   SignUpButton,
   UserButton,
 } from '@clerk/nextjs'
+import { ThemeToggle } from './ThemeToggle'
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -39,12 +40,12 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-white dark:bg-gray-900">
+    <header className="">
       <div className="container mx-auto flex items-center justify-between p-4">
         {/* Logo */}
         <Link
           href="/"
-          className="text-xl font-bold text-gray-900 dark:text-white"
+          className="text-xl font-bold "
         >
           FotoGallery
         </Link>
@@ -63,7 +64,7 @@ export default function Header() {
             </Link>
           ))}
         </nav>
-
+        <ThemeToggle />
         {/* Auth Buttons */}
         <div className="hidden md:flex gap-4 items-center">
           {isAuthenticated ? (
@@ -106,7 +107,7 @@ export default function Header() {
               {link.name}
             </Link>
           ))}
-
+      
           {/* Auth Buttons */}
           <div className="mt-4">
             {isAuthenticated ? (
